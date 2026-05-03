@@ -186,26 +186,64 @@ If all three POCs validate:
 
 ---
 
-## Unverified Assumptions (R Has Not Checked These)
+## Verified Answers to Pre-Implementation Questions
 
-R has made several pattern-match guesses below. None have been verified. Several are fabrication risks if R is wrong.
+### Verified: Tools & Code Availability
 
-1. **HY-World-2.0 availability** — R does not know whether weights/code are publicly released, what license applies, or where to obtain them. Pattern-match suggests Tencent's Hunyuan family, but R has not verified a "HY-World-2.0" variant exists or is downloadable.
+**1. HY-World-2.0 — AVAILABLE**
+- Repository: https://github.com/Tencent-Hunyuan/HY-World-2.0
+- License: Tencent-HY-World-2.0-Community License
+- Weights: On Hugging Face (tencent/HY-World-2.0), auto-downloaded on first run
+- Installation: `git clone` + `pip install` from repo
+- Output: Mesh, 3DGS, point clouds directly usable
+- Status: Full public release, code + weights both available
 
-2. **StyleGaussian availability** — R has not verified the repo, pre-trained weights, installation requirements, or its compatibility with HY-World-2.0 outputs.
+**2. StyleGaussian — AVAILABLE**
+- Repository: https://github.com/Kunhao-Liu/StyleGaussian
+- Paper: SIGGRAPH Asia 2024
+- License: **Unspecified** (no LICENSE file; assume research-use-only or contact author before commercial use)
+- Code: Full PyTorch implementation available
+- Weights: Train from scratch or contact author (no pre-trained weights documented)
+- Status: Research code, maintained, but license unclear
 
-3. **Hardware topology** — Brief names "4090" and "M5/M5 Max" but current environment is this Linux box. R does not know:
-   - Is the 4090 this machine, or a separate host?
-   - Is the M5 a separate device you'll work on directly?
-   - Should R assume it has access to the 4090 via SSH/remote, or is it entirely off-limits?
+**3. COLMAP — AVAILABLE (Open Source)**
+- Repository: https://github.com/colmap/colmap
+- License: BSD
+- Installation: Homebrew (macOS), conda, system packages, Docker, or from source
+- Binaries: https://demuc.de/colmap/
+- Python bindings: PyPI package `pycolmap`
+- Status: Actively maintained, all platforms supported
 
-4. **WebGL splat renderer choice** — Candidates exist: `@mkkellogg/gaussian-splats-3d`, `gsplat.js`, `antimatter15/splat`, Spark, others. Brief did not specify, and R should not unilaterally pick one.
+**4. WebGL Splat Renderers — Multiple Options Available**
 
-5. **Audio for POC 2** — No song clip specified. R assumed 30-60 seconds with "clear beat" but operator may have a specific track in mind.
+| Library | License | Status | Best For |
+|---------|---------|--------|----------|
+| **gsplat.js** (Hugging Face) | MIT | Active (v1.2.9) | General-purpose, well-maintained |
+| **GaussianSplats3D** (mkkellogg) | Non-commercial | Active (2025) | Three.js integration, mature |
+| **antimatter15/splat** | Unspecified | Active (2025) | Zero dependencies, minimal code |
+| **Cesium** | Apache 2.0 | New (2025) | Geographic scale, LOD streaming, overkill for POCs |
 
-6. **Asset hosting** — No preference stated for where to host/serve splat files.
+**Recommendation for POC 2:** Use `gsplat.js` (MIT, active, no dependency constraints) or `GaussianSplats3D` (mature, three.js ecosystem).
 
-7. **COLMAP for POC 3** — R assumed COLMAP is available and operator is comfortable with it. No verification of installation, version, or operational knowledge.
+---
+
+### Still Unverified: Hardware & User Preferences
+
+These require operator to answer (R cannot determine):
+
+1. **Hardware topology:**
+   - Is the 4090 this Linux machine, or a separate host?
+   - Is the M5/M5 Max a separate device, or accessible via SSH?
+   - Should R assume direct shell access to the 4090, or will you run commands manually?
+
+2. **Audio for POC 2:**
+   - Do you have a specific song clip, or should R use any test audio?
+
+3. **Asset hosting:**
+   - Where should splat files be served from? (local dev, GitHub releases, cloud storage, etc.)
+
+4. **Renderer preference:**
+   - `gsplat.js` (recommended: MIT, active) or `GaussianSplats3D` (alternative: mature three.js)?
 
 ---
 
