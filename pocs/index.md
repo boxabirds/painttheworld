@@ -295,4 +295,161 @@ R will not write any files or code until operator clarifies:
 5. **Audio:**
    - Does operator have a specific 30-60 second song clip for POC 2, or should R assume any test audio works?
 
-**R has written no new files and made no code changes. Awaiting direction.**
+---
+
+## Getting Started: POC 1 on 4090
+
+### Prerequisites Check
+
+Before starting, verify on your 4090:
+
+```bash
+# Check CUDA/PyTorch
+python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU: {torch.cuda.get_device_name(0)}')"
+
+# Check git
+git --version
+
+# Check Python version (3.8+)
+python3 --version
+```
+
+### Step 1: Set Up HY-World-2.0
+
+```bash
+cd /home/julian/sambashare/expts/painttheworld
+mkdir -p experiments/poc1-static-worlds
+cd experiments/poc1-static-worlds
+
+# Clone HY-World-2.0
+git clone https://github.com/Tencent-Hunyuan/HY-World-2.0
+cd HY-World-2.0
+
+# Create environment
+conda env create -f environment.yml
+conda activate hy-world-2.0
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 2: Generate First Splat Scene
+
+```bash
+# Inside HY-World-2.0 repo
+python scripts/inference.py \
+  --prompt "a vibrant forest with sunlight filtering through trees" \
+  --output_dir ../output_scenes/forest_v1 \
+  --format 3dgs  # Outputs .ply Gaussian splat files
+```
+
+**Expected output:** Directory `output_scenes/forest_v1/` containing:
+- `splats.ply` (3D Gaussian splat file, ~50-500MB depending on complexity)
+- `metadata.json` (scene info)
+- Preview images
+
+**Time estimate:** 10-30 minutes depending on model size and GPU load
+
+### Step 3: Set Up StyleGaussian
+
+```bash
+cd ..
+git clone https://github.com/Kunhao-Liu/StyleGaussian
+cd StyleGaussian
+
+# Create environment
+conda env create -f environment.yml
+conda activate stylegaussian
+
+pip install -r requirements.txt
+```
+
+### Step 4: Create Style Variants
+
+StyleGaussian requires:
+1. Base splat scene (.ply from HY-World-2.0)
+2. Style reference image (a photo, painting, or artwork defining the visual style)
+
+```bash
+# Prepare style images
+mkdir ../style_references
+# Place image files here: marshmallow.jpg, diamond.jpg, kitten.jpg, etc.
+
+# Run style transfer
+python style_transfer.py \
+  --splat_path ../output_scenes/forest_v1/splats.ply \
+  --style_image ../style_references/marshmallow.jpg \
+  --output_path ../output_scenes/forest_v1/forest_marshmallow.ply
+```
+
+**Expected output:** Stylized splat file `forest_marshmallow.ply` with texture applied
+
+**Time estimate:** 5-15 minutes per style variant
+
+### Step 5: Document Outputs
+
+After each successful run, record in `pocs/poc1-static-worlds/results.md`:
+
+```markdown
+## POC 1 Results
+
+### Scene 1: Forest
+- **Base scene generation time:** XX minutes
+- **Base file size:** XXX MB
+- **Quality assessment:** [notes on visual output]
+
+### Style Variants
+| Style | Generation Time | File Size | Visual Result |
+|-------|-----------------|-----------|---------------|
+| Marshmallow | X min | XXX MB | [notes] |
+| Diamond | X min | XXX MB | [notes] |
+| Kitten | X min | XXX MB | [notes] |
+
+### Observations
+- [What worked well]
+- [What was unexpectedly slow/fast]
+- [Quality surprises (better/worse than expected)]
+- [Blockers encountered]
+```
+
+### Step 6: Prepare for POC 2
+
+Once you have 1-2 styled scenes:
+
+1. Copy best `.ply` files to: `pocs/poc1-static-worlds/splat_assets/`
+2. Run on M5 for POC 2 web viewer:
+   ```bash
+   # Transfer via GitHub or direct copy
+   scp -r pocs/poc1-static-worlds/splat_assets/ <m5>:~/expts/painttheworld/
+   ```
+
+---
+
+## Potential Blockers & Solutions
+
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError` in HY-World-2.0 | Ensure conda env activated: `conda activate hy-world-2.0` |
+| Out of memory (OOM) on 4090 | Reduce model precision or batch size; see HY-World-2.0 docs for quantization |
+| StyleGaussian training diverges | Check style image size (recommend 512x512); try different learning rate in config |
+| `.ply` files too large (>1GB) | Use ply compression or decimation tools; document file sizes for web feasibility |
+| CUDA/PyTorch version mismatch | Use `conda` environments to pin versions; don't mix pip/conda |
+
+---
+
+## Success Criteria for POC 1
+
+When done, you should have:
+
+1. ✓ At least 1 base splat scene generated from text prompt
+2. ✓ 3+ style variants per scene created
+3. ✓ All outputs documented with timing and file sizes
+4. ✓ Quality assessment (are the splats recognizable? Are styles visually distinct?)
+5. ✓ Splat files ready to transfer to M5 for web viewer (POC 2)
+
+Commit results to `pocs/poc1-static-worlds/` folder with:
+- `.ply` files
+- `results.md` (timing, sizes, quality notes)
+- Any failure logs or error messages (for debugging later)
+
+**Then:** Move to POC 2 on M5 to build the interactive viewer that loads these splats.
